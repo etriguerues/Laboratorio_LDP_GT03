@@ -1,86 +1,44 @@
 #!/bin/bash
 export LANG=C.UTF-8
 
-# Colores para la salida en consola
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
-NC='\033[0;0m' # Sin color
+NC='\033[0;0m' 
 
 echo "--------------------------------------------------------"
-echo "Iniciando validación: Estación Climática (Ciclo Para)"
+echo "Validación Lab 3: Carrito E-commerce (Python)"
 echo "--------------------------------------------------------"
 
-# Variable de control de errores
 FAILED=0
+FILE_PY=$(find . -name "*.py" | head -n 1)
+[ -z "$FILE_PY" ] && { echo -e "${RED}[ERROR] Sin archivo .py.${NC}"; exit 1; }
+echo -e "Archivo detectado: ${YELLOW}$FILE_PY${NC}\n"
 
-# Buscar el archivo .psc
-FILE_PSC=$(find . -name "*.psc" | head -n 1)
+# --- PASO 1: CONSTANTES ---
+echo -e "${YELLOW}PASO 1: Verificando Clean Code...${NC}"
+if grep -qE "DESCUENTO_VIP\s*=\s*0\.20" "$FILE_PY"; then echo -e "${GREEN}[OK] Constante de descuento lista.${NC}"; else echo -e "${RED}[ERROR] Falta DESCUENTO_VIP = 0.20.${NC}"; FAILED=1; fi
 
-if [ -z "$FILE_PSC" ]; then
-    echo -e "${RED}[ERROR] No se encontró ningún archivo .psc (PSeInt).${NC}"
-    exit 1
-fi
+# --- PASO 2: MUTABILIDAD ---
+echo -e "\n${YELLOW}PASO 2: Verificando Copias Seguras...${NC}"
+if grep -qE "carrito_simulado\s*=\s*carrito_actual\.copy\(\)" "$FILE_PY"; then echo -e "${GREEN}[OK] El carrito fue copiado con .copy().${NC}"; else echo -e "${RED}[ERROR] No se usó carrito_actual.copy().${NC}"; FAILED=1; fi
 
-echo -e "Archivo detectado: ${YELLOW}$FILE_PSC${NC}"
+# --- PASO 3: LÓGICA Y CASTING ---
+echo -e "\n${YELLOW}PASO 3: Verificando Lógica y Casting...${NC}"
+if grep -qE "def\s+procesar_precio" "$FILE_PY" && grep -qE "float\s*\(" "$FILE_PY"; then echo -e "${GREEN}[OK] Función de precio y casting float detectados.${NC}"; else echo -e "${RED}[ERROR] Error en procesar_precio o falta float().${NC}"; FAILED=1; fi
 
-# --- PASO 1: VERIFICAR FUNCIÓN OBLIGATORIA ---
-echo -e "\n${YELLOW}PASO 1: Verificando Función ClasificarTemperatura...${NC}"
+# --- PASO 4: GARBAGE COLLECTOR ---
+echo -e "\n${YELLOW}PASO 4: Verificando Garbage Collector...${NC}"
+if grep -qE "carrito_actual\s*=\s*None" "$FILE_PY" && grep -qE "carrito_simulado\s*=\s*None" "$FILE_PY"; then echo -e "${GREEN}[OK] Ambas listas fueron destruidas.${NC}"; else echo -e "${RED}[ERROR] Faltan los asignamientos a None al final.${NC}"; FAILED=1; fi
 
-# Validar definición de la función y retorno de cadena (Caracter)
-if grep -qi "Funcion.*ClasificarTemperatura" "$FILE_PSC"; then
-    echo -e "${GREEN}[OK] Función 'ClasificarTemperatura' detectada.${NC}"
-else
-    echo -e "${RED}[ERROR] No se encontró la función 'ClasificarTemperatura'.${NC}"
+# --- PASO 5: COMPILACIÓN Y SINTAXIS ---
+echo -e "\n${YELLOW}PASO 5: Verificando sintaxis de Python...${NC}"
+if python3 -m py_compile "$FILE_PY" 2>/dev/null; then 
+    echo -e "${GREEN}[OK] Sintaxis correcta.${NC}"
+else 
+    echo -e "${RED}[ERROR] Error de sintaxis en Python.${NC}"
+    python3 -m py_compile "$FILE_PY"
     FAILED=1
 fi
 
-if grep -qi "Como Caracter" "$FILE_PSC"; then
-    echo -e "${GREEN}[OK] Definición de retorno 'Caracter' encontrada.${NC}"
-else
-    echo -e "${RED}[ERROR] La función debe retornar un tipo 'Caracter' (texto).${NC}"
-    FAILED=1
-fi
-
-# --- PASO 2: VERIFICAR LÓGICA DE TEMPERATURA (SI-ENTONCES) ---
-echo -e "\n${YELLOW}PASO 2: Verificando Lógica Interna de la Función...${NC}"
-
-# Validar el umbral de 35 grados y el mensaje de alerta
-if grep -q "35" "$FILE_PSC" && grep -qi "Calor Extremo" "$FILE_PSC"; then
-    echo -e "${GREEN}[OK] Lógica de alerta por Calor Extremo (>= 35) detectada.${NC}"
-else
-    echo -e "${RED}[ERROR] No se encontró la validación de 35 grados o el mensaje de 'Calor Extremo'.${NC}"
-    FAILED=1
-fi
-
-# --- PASO 3: VERIFICAR CICLO PARA ---
-echo -e "\n${YELLOW}PASO 3: Verificando Estructura de Iteración (Para)...${NC}"
-
-# Validar el uso del ciclo Para desde 1 hasta cantidad
-if grep -qiE "Para.*<-.*1.*Hasta.*cantidad" "$FILE_PSC"; then
-    echo -e "${GREEN}[OK] Ciclo 'Para' configurado correctamente (1 hasta cantidad).${NC}"
-else
-    echo -e "${RED}[ERROR] No se encontró un ciclo 'Para' que itere desde 1 hasta 'cantidad'.${NC}"
-    FAILED=1
-fi
-
-# --- PASO 4: VARIABLES Y TIPOS ---
-echo -e "\n${YELLOW}PASO 4: Verificando Variables Principales...${NC}"
-
-# Validar cantidad como Entero y temp_actual como Real
-if grep -qiE "Definir.*cantidad.*Como.*Entero" "$FILE_PSC" && grep -qiE "Definir.*temp_actual.*Como.*Real" "$FILE_PSC"; then
-    echo -e "${GREEN}[OK] Variables 'cantidad' (Entero) y 'temp_actual' (Real) definidas.${NC}"
-else
-    echo -e "${RED}[ERROR] Error en la definición de tipos: 'cantidad' debe ser Entero y 'temp_actual' Real.${NC}"
-    FAILED=1
-fi
-
-# --- RESULTADO FINAL ---
-echo -e "\n--------------------------------------------------------"
-if [ $FAILED -eq 0 ]; then
-    echo -e "${GREEN}✔ LABORATORIO: ESTACIÓN CLIMÁTICA APROBADO${NC}"
-    exit 0
-else
-    echo -e "${RED}✘ EL ALGORITMO NO CUMPLE CON LOS REQUISITOS${NC}"
-    exit 1
-fi
+[ $FAILED -eq 0 ] && { echo -e "\n${GREEN}✔ LABORATORIO 3 APROBADO${NC}"; exit 0; } || { echo -e "\n${RED}✘ LAB FALLIDO${NC}"; exit 1; }
