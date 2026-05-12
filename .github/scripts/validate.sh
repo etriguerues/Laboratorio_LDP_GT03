@@ -6,7 +6,7 @@ YELLOW='\033[1;33m'
 NC='\033[0;0m' 
 
 echo "--------------------------------------------------------"
-echo "Validación Lab 3: Sistema de Almacén"
+echo "Validación Lab: Sistema de Almacén"
 echo "--------------------------------------------------------"
 
 FAILED=0
